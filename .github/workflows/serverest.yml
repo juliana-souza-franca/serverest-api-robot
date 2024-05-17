@@ -1,0 +1,76 @@
+name: Teste de API com robot
+ 
+on: 
+  # Triggers the workflow on push or pull request events but only for the "main" branch
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+ 
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: 
+      ubuntu-latest
+ 
+    steps:
+      - name: Checkout Repository
+        # run: echo Fazendo clone do repositorio na maquina virtual
+        uses: actions/checkout@v4
+ 
+      - name: Set up Python
+        # run: echo Instalação da versão 3.12 do Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+ 
+      - name: Install dependencies
+        # run: echo Instalação das depedências do Projeto
+        run: |
+          pip install robotframework
+          pip install robotframework-requests
+ 
+      - name: Run Robot Framework tests
+        # run: echo Executando os testes de API do Robot
+        run: |
+          robot --outputdir results/ tests/
+
+      - name: Test Report
+        # run: echo Salvando o Report dos Testes
+        uses: actions/upload-artifact@v4
+        with:
+          name: robot-framework-report
+          path: results/**
+
+  deploy:
+    name: Deploy GitHub Pages 🌐
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - test
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: https://juliana-souza-franca.github.io/serverest-api-robot/report.html
+    steps:
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+ 
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: robot-framework-report
+ 
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./
+ 
+      - name: Deploy to Github Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
